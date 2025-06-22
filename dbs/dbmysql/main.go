@@ -1,9 +1,9 @@
 package dbmysql
 
 import (
-	"components/util"
 	"errors"
 	"fmt"
+	"github.com/caoyuewen/components/util"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )

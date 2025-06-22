@@ -1,9 +1,9 @@
 package util
 
 import (
-	"components/util/ecb"
-	"components/util/padding"
 	"crypto/aes"
+	"github.com/caoyuewen/components/util/ecb"
+	"github.com/caoyuewen/components/util/padding"
 )
 
 func ECBEncrypt(pt, key []byte) ([]byte, error) {

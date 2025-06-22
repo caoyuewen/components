@@ -2,9 +2,9 @@ package tictokapi
 
 import (
 	"bytes"
-	"components/util"
 	"encoding/json"
 	"fmt"
+	"github.com/caoyuewen/components/util"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"

@@ -1,8 +1,8 @@
 package tokenmgr
 
 import (
-	"components/util"
 	"encoding/json"
+	"github.com/caoyuewen/components/util"
 	log "github.com/sirupsen/logrus"
 	"time"
 )

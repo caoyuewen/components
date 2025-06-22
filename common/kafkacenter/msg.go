@@ -1,8 +1,8 @@
 package kafkacenter
 
 import (
-	"components/common/sharecache"
 	"encoding/json"
+	"github.com/caoyuewen/components/common/sharecache"
 )
 
 type MsgKey struct {

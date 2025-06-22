@@ -1,12 +1,12 @@
 package sharecache
 
 import (
-	"components/dbs/dbredis"
-	"components/util"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/caoyuewen/components/dbs/dbredis"
+	"github.com/caoyuewen/components/util"
 	"github.com/go-redis/redis/v8"
 	log "github.com/sirupsen/logrus"
 	"math"

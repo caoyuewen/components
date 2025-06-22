@@ -1,11 +1,11 @@
 package sharecache
 
 import (
-	"components/dbs/dbredis"
-	"components/util"
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/caoyuewen/components/dbs/dbredis"
+	"github.com/caoyuewen/components/util"
 	log "github.com/sirupsen/logrus"
 	"time"
 )

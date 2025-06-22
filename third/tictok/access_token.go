@@ -1,10 +1,10 @@
 package tictok
 
 import (
-	"components/dbs/dbredis"
-	"components/third/tictok/tictokapi"
-	"components/util"
 	"context"
+	"github.com/caoyuewen/components/dbs/dbredis"
+	"github.com/caoyuewen/components/third/tictok/tictokapi"
+	"github.com/caoyuewen/components/util"
 	log "github.com/sirupsen/logrus"
 	"time"
 )

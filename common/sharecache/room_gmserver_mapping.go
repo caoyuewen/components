@@ -1,9 +1,9 @@
 package sharecache
 
 import (
-	"components/dbs/dbredis"
 	"context"
 	"errors"
+	"github.com/caoyuewen/components/dbs/dbredis"
 	"github.com/go-redis/redis/v8"
 	log "github.com/sirupsen/logrus"
 )

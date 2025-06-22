@@ -1,10 +1,10 @@
 package tictokapi
 
 import (
-	"components/third/tictok/tictokmsg"
-	"components/util"
 	"encoding/json"
 	"fmt"
+	"github.com/caoyuewen/components/third/tictok/tictokmsg"
+	"github.com/caoyuewen/components/util"
 	log "github.com/sirupsen/logrus"
 )
 
