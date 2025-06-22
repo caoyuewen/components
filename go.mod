@@ -1,4 +1,4 @@
-module components
+module github.com/caoyuewen/components
 
 go 1.21.5
 
