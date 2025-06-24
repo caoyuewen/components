@@ -48,7 +48,7 @@ func DecryptToken(aes, token string) (*TokenInfo, error) {
 	return &info, nil
 }
 
-func VerifyToken(aes, token, appId, uid string) bool {
+func VerifyToken(aes, token, appName, uid string, loc *time.Location) bool {
 	info, err := DecryptToken(aes, token)
 	if err != nil {
 		return false
@@ -58,11 +58,11 @@ func VerifyToken(aes, token, appId, uid string) bool {
 		return false
 	}
 
-	if info.ExpireAt < time.Now().Unix() { // 过期
+	if info.ExpireAt < time.Now().In(loc).Unix() { // 过期
 		return false
 	}
 
-	if info.AppName != appId {
+	if info.AppName != appName {
 		return false
 	}
 
@@ -73,6 +73,6 @@ func VerifyToken(aes, token, appId, uid string) bool {
 	return true
 }
 
-func (t *TokenInfo) IsExpired() bool {
-	return time.Now().Unix() >= t.ExpireAt
+func (t *TokenInfo) IsExpired(loc *time.Location) bool {
+	return time.Now().In(loc).Unix() >= t.ExpireAt
 }
