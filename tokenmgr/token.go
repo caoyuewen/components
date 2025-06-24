@@ -7,19 +7,22 @@ import (
 	"time"
 )
 
+const (
+	PermissionsNormal = 1 // 普通用户
+	PermissionsTest   = 2 // 测试账号
+	PermissionsAdmin  = 3 // 可操作后台
+)
+
 type TokenInfo struct {
-	AppName  string
-	UserId   string
-	ExpireAt int64
+	Id          string
+	AppName     string
+	Permissions int
+	ExpireAt    int64
 }
 
 func CreateToken(aes string, info TokenInfo) (string, error) {
-	m := TokenInfo{
-		UserId:   info.UserId,
-		AppName:  info.AppName,
-		ExpireAt: info.ExpireAt,
-	}
-	data, err := json.Marshal(m)
+
+	data, err := json.Marshal(info)
 	if err != nil {
 		log.Info("create token err", err)
 		return "", err
@@ -48,25 +51,21 @@ func DecryptToken(aes, token string) (TokenInfo, error) {
 	return info, nil
 }
 
-func VerifyToken(aes, token, appName, uid string, loc *time.Location) bool {
+func VerifyToken(aes, token, appName string, loc *time.Location) (TokenInfo, bool) {
 	info, err := DecryptToken(aes, token)
 	if err != nil {
-		return false
+		return info, false
 	}
 
 	if info.ExpireAt < time.Now().In(loc).Unix() { // 过期
-		return false
+		return info, false
 	}
 
 	if info.AppName != appName {
-		return false
+		return info, false
 	}
 
-	if info.UserId != uid {
-		return false
-	}
-
-	return true
+	return info, true
 }
 
 func (t *TokenInfo) IsExpired(loc *time.Location) bool {
