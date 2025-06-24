@@ -36,14 +36,14 @@ func DecryptToken(aes, token string) (TokenInfo, error) {
 	bytes, err := util.AESDecrypt(token, aes)
 	if err != nil {
 		log.Info("decrypt token err", err)
-		return nil, err
+		return TokenInfo{}, err
 	}
 
 	var info TokenInfo
 	err = json.Unmarshal([]byte(bytes), &info)
 	if err != nil {
 		log.Info("decrypt token unmarshal err", err)
-		return nil, err
+		return TokenInfo{}, err
 	}
 	return info, nil
 }
@@ -51,10 +51,6 @@ func DecryptToken(aes, token string) (TokenInfo, error) {
 func VerifyToken(aes, token, appName, uid string, loc *time.Location) bool {
 	info, err := DecryptToken(aes, token)
 	if err != nil {
-		return false
-	}
-
-	if info == nil {
 		return false
 	}
 
