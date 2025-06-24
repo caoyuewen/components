@@ -87,11 +87,11 @@ func (r *BaseRepository[T]) FindAll() ([]*T, error) {
 	return list, err
 }
 
-func (r *BaseRepository[T]) FirstOne(query any, args ...any) (*T, error) {
+func (r *BaseRepository[T]) FindOne(query any, args ...any) (*T, error) {
 	var t T
 	err := r.db.Where(query, args...).First(&t).Error
 	if err != nil {
-		log.Errorf("FirstOne err: %s", err.Error())
+		log.Errorf("FindOne err: %s", err.Error())
 		return &t, err
 	}
 	return &t, err
@@ -128,6 +128,28 @@ func (r *BaseRepository[T]) FindPage(offset, limit int, order string, query any,
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			log.Errorf("FindPage err : %s", err.Error())
+		}
+		return list, 0, err
+	}
+
+	return list, count, nil
+}
+
+func (r *BaseRepository[T]) Find(order string, query any, args ...any) ([]*T, int64, error) {
+	var (
+		list  []*T
+		count int64
+		db    = r.db.Model((*T)(nil)).Where(query, args...)
+	)
+
+	if order != "" {
+		db = db.Order(order) // 比如 "id desc" 或 "created_at asc"
+	}
+
+	err := db.Find(&list).Error
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Errorf("Find err : %s", err.Error())
 		}
 		return list, 0, err
 	}
