@@ -135,11 +135,11 @@ func (r *BaseRepository[T]) FindPage(offset, limit int, order string, query any,
 	return list, count, nil
 }
 
-func (r *BaseRepository[T]) Find(order string, query any, args ...any) ([]*T, int64, error) {
+func (r *BaseRepository[T]) Find(order string, query any, args ...any) ([]*T, error) {
 	var (
-		list  []*T
-		count int64
-		db    = r.db.Model((*T)(nil)).Where(query, args...)
+		list []*T
+
+		db = r.db.Model((*T)(nil)).Where(query, args...)
 	)
 
 	if order != "" {
@@ -151,8 +151,8 @@ func (r *BaseRepository[T]) Find(order string, query any, args ...any) ([]*T, in
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			log.Errorf("Find err : %s", err.Error())
 		}
-		return list, 0, err
+		return list, err
 	}
 
-	return list, count, nil
+	return list, nil
 }
