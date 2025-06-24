@@ -63,7 +63,7 @@ func (r *BaseRepository[T]) FindByID(id any) (*T, error) {
 	var t *T
 	idI64, err := util.ToInt64E(id)
 	if err != nil {
-		log.Errorf("FindByID err, id is not int64: %s", err.Error())
+		log.Errorf("FindByID err: %s", err.Error())
 		return t, err
 	}
 	err = r.db.First(&t, fmt.Sprintf("%s = ?", r.pkColumn), idI64).Error
@@ -81,7 +81,7 @@ func (r *BaseRepository[T]) FindAll() ([]*T, error) {
 	var list []*T
 	err := r.db.Find(&list).Error
 	if err != nil {
-		log.Errorf("FindAll err, id is not int64: %s", err.Error())
+		log.Errorf("FindAll err: %s", err.Error())
 		return list, err
 	}
 	return list, err
@@ -91,7 +91,7 @@ func (r *BaseRepository[T]) FirstOne(query any, args ...any) (*T, error) {
 	var t T
 	err := r.db.Where(query, args...).First(&t).Error
 	if err != nil {
-		log.Errorf("FirstOne err, id is not int64: %s", err.Error())
+		log.Errorf("FirstOne err: %s", err.Error())
 		return &t, err
 	}
 	return &t, err
