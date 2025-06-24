@@ -32,7 +32,7 @@ func CreateToken(aes string, info TokenInfo) (string, error) {
 	return encrypted, nil
 }
 
-func DecryptToken(aes, token string) (*TokenInfo, error) {
+func DecryptToken(aes, token string) (TokenInfo, error) {
 	bytes, err := util.AESDecrypt(token, aes)
 	if err != nil {
 		log.Info("decrypt token err", err)
@@ -45,7 +45,7 @@ func DecryptToken(aes, token string) (*TokenInfo, error) {
 		log.Info("decrypt token unmarshal err", err)
 		return nil, err
 	}
-	return &info, nil
+	return info, nil
 }
 
 func VerifyToken(aes, token, appName, uid string, loc *time.Location) bool {
