@@ -25,29 +25,20 @@ import (
 	"fmt"
 	"github.com/caoyuewen/components/util"
 	log "github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
-func AutoMigrate(tables []interface{}) {
-	if err := dbc.AutoMigrate(tables...); err != nil {
-		log.Errorf("AutoMigrate err: %v", err)
-	}
-}
-
 type BaseRepository[T any] struct {
-	db       *gorm.DB
 	pkColumn string
 }
 
-func NewBaseRepository[T any](db *gorm.DB, pkColumn string) BaseRepository[T] {
+func NewBaseRepository[T any](pkColumn string) BaseRepository[T] {
 	return BaseRepository[T]{
-		db:       db,
 		pkColumn: pkColumn,
 	}
 }
 
 func (r *BaseRepository[T]) Insert(obj *T) error {
-	err := r.db.Create(obj).Error
+	err := dbc.Create(obj).Error
 	if err != nil {
 		log.Errorf("Insert err: %s", err.Error())
 	}
@@ -55,7 +46,7 @@ func (r *BaseRepository[T]) Insert(obj *T) error {
 }
 
 func (r *BaseRepository[T]) Update(obj *T) error {
-	err := r.db.Save(obj).Error
+	err := dbc.Save(obj).Error
 	if err != nil {
 		log.Errorf("Update err: %s", err.Error())
 	}
@@ -69,7 +60,7 @@ func (r *BaseRepository[T]) Delete(id any) error {
 		log.Errorf("Delete err, id is not int64: %s", err.Error())
 		return err
 	}
-	err = r.db.Delete(&t, fmt.Sprintf("%s = ?", r.pkColumn), idI64).Error
+	err = dbc.Delete(&t, fmt.Sprintf("%s = ?", r.pkColumn), idI64).Error
 	if err != nil {
 		log.Errorf("Delete err: %s", err.Error())
 	}
@@ -78,7 +69,7 @@ func (r *BaseRepository[T]) Delete(id any) error {
 
 func (r *BaseRepository[T]) DeleteWhere(query any, args ...any) error {
 	var t T
-	err := r.db.Where(query, args...).Delete(&t).Error
+	err := dbc.Where(query, args...).Delete(&t).Error
 	if err != nil {
 		log.Errorf("DeleteWhere err: %s", err.Error())
 		return err
@@ -93,7 +84,7 @@ func (r *BaseRepository[T]) FindByID(id any) (*T, error) {
 		log.Errorf("FindByID err (invalid id): %s", err.Error())
 		return nil, err
 	}
-	err = r.db.First(&t, fmt.Sprintf("%s = ?", r.pkColumn), idI64).Error
+	err = dbc.First(&t, fmt.Sprintf("%s = ?", r.pkColumn), idI64).Error
 	if err != nil {
 		log.Errorf("FindByID err: %s", err.Error())
 		return nil, err
@@ -103,7 +94,7 @@ func (r *BaseRepository[T]) FindByID(id any) (*T, error) {
 
 func (r *BaseRepository[T]) FindOne(query any, args ...any) (*T, error) {
 	var t T
-	err := r.db.Where(query, args...).First(&t).Error
+	err := dbc.Where(query, args...).First(&t).Error
 	if err != nil {
 		log.Errorf("FindOne err: %s", err.Error())
 		return nil, err
@@ -113,7 +104,7 @@ func (r *BaseRepository[T]) FindOne(query any, args ...any) (*T, error) {
 
 func (r *BaseRepository[T]) FindAll() ([]*T, error) {
 	var list []*T
-	err := r.db.Find(&list).Error
+	err := dbc.Find(&list).Error
 	if err != nil {
 		log.Errorf("FindAll err: %s", err.Error())
 		return nil, err
@@ -123,7 +114,7 @@ func (r *BaseRepository[T]) FindAll() ([]*T, error) {
 
 func (r *BaseRepository[T]) Find(order string, query any, args ...any) ([]*T, error) {
 	var list []*T
-	db := r.db.Model((*T)(nil)).Where(query, args...)
+	db := dbc.Model((*T)(nil)).Where(query, args...)
 
 	if order != "" {
 		db = db.Order(order)
@@ -139,7 +130,7 @@ func (r *BaseRepository[T]) Find(order string, query any, args ...any) ([]*T, er
 
 func (r *BaseRepository[T]) Count(query any, args ...any) (int64, error) {
 	var count int64
-	err := r.db.Model((*T)(nil)).Where(query, args...).Count(&count).Error
+	err := dbc.Model((*T)(nil)).Where(query, args...).Count(&count).Error
 	if err != nil {
 		log.Errorf("Count err: %s", err.Error())
 		return 0, err
@@ -151,7 +142,7 @@ func (r *BaseRepository[T]) FindPage(offset, limit int, order string, query any,
 	var (
 		list  []*T
 		count int64
-		db    = r.db.Model((*T)(nil)).Where(query, args...)
+		db    = dbc.Model((*T)(nil)).Where(query, args...)
 	)
 
 	if order != "" {
