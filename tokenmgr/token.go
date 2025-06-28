@@ -1,6 +1,7 @@
 package tokenmgr
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"github.com/caoyuewen/components/util"
 	log "github.com/sirupsen/logrus"
@@ -21,7 +22,6 @@ type TokenInfo struct {
 }
 
 func CreateToken(aes string, info TokenInfo) (string, error) {
-
 	data, err := json.Marshal(info)
 	if err != nil {
 		log.Info("create token err", err)
@@ -32,11 +32,20 @@ func CreateToken(aes string, info TokenInfo) (string, error) {
 		log.Info("create token err", err)
 		return "", err
 	}
-	return encrypted, nil
+
+	token := base64.URLEncoding.EncodeToString([]byte(encrypted))
+	return token, nil
 }
 
 func DecryptToken(aes, token string) (TokenInfo, error) {
-	bytes, err := util.AESDecrypt(token, aes)
+	// ✅ Cookie 里的 token 是 URL-safe base64，需要先解码
+	raw, err := base64.URLEncoding.DecodeString(token)
+	if err != nil {
+		log.Info("base64 decode token err", err)
+		return TokenInfo{}, err
+	}
+
+	bytes, err := util.AESDecrypt(string(raw), aes)
 	if err != nil {
 		log.Info("decrypt token err", err)
 		return TokenInfo{}, err
@@ -45,7 +54,7 @@ func DecryptToken(aes, token string) (TokenInfo, error) {
 	var info TokenInfo
 	err = json.Unmarshal([]byte(bytes), &info)
 	if err != nil {
-		log.Info("decrypt token unmarshal err", err)
+		log.Info("unmarshal token err", err)
 		return TokenInfo{}, err
 	}
 	return info, nil
