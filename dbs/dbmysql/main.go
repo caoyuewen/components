@@ -53,6 +53,71 @@ func (r *BaseRepository[T]) Update(obj *T) error {
 	return err
 }
 
+func (r *BaseRepository[T]) UpdateById(id string, updates map[string]interface{}) (int64, error) {
+	var t T
+	idI64, err := util.ToInt64E(id)
+	if err != nil {
+		log.Errorf("UpdateById err, id is not int64: %s", err.Error())
+		return 0, err
+	}
+
+	result := dbc.Model(&t).Where("id = ?", idI64).Updates(updates)
+	if result.Error != nil {
+		log.Errorf("UpdateById err: %s", result.Error)
+		return 0, result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		log.Warnf("UpdateById: no rows affected for id = %v", id)
+	}
+	return result.RowsAffected, nil
+}
+
+func (r *BaseRepository[T]) UpdateByIDs(ids []int64, updates map[string]interface{}) (int64, error) {
+	var t T
+	if len(ids) == 0 {
+		log.Warn("UpdateByIDs: empty ID list")
+		return 0, nil
+	}
+
+	result := dbc.Model(&t).Where("id IN ?", ids).Updates(updates)
+	if result.Error != nil {
+		log.Errorf("UpdateByIDs err: %s", result.Error)
+		return 0, result.Error
+	}
+	if result.RowsAffected == 0 {
+		log.Warnf("UpdateByIDs: no rows affected for ids = %v", ids)
+	}
+	return result.RowsAffected, nil
+}
+
+func (r *BaseRepository[T]) UpdateMany(condition any, updates map[string]interface{}) (int64, error) {
+	var t T
+	result := dbc.Model(&t).Where(condition).Updates(updates)
+	if result.Error != nil {
+		log.Errorf("UpdateMany err: %s", result.Error)
+		return 0, result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		log.Warn("UpdateMany: no rows affected")
+	}
+	return result.RowsAffected, nil
+}
+
+func (r *BaseRepository[T]) UpdateWhereRaw(whereSQL string, args []any, updates map[string]interface{}) (int64, error) {
+	var t T
+	result := dbc.Model(&t).Where(whereSQL, args...).Updates(updates)
+	if result.Error != nil {
+		log.Errorf("UpdateWhereRaw err: %s", result.Error)
+		return 0, result.Error
+	}
+	if result.RowsAffected == 0 {
+		log.Warnf("UpdateWhereRaw: no rows affected for condition = %s", whereSQL)
+	}
+	return result.RowsAffected, nil
+}
+
 func (r *BaseRepository[T]) Delete(id any) error {
 	var t T
 	idI64, err := util.ToInt64E(id)
