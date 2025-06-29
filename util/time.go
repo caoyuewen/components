@@ -52,3 +52,14 @@ func GetNextMondayZeroTime(t time.Time) time.Time {
 	// 返回下一个周一 0 点的时间
 	return time.Date(nextMonday.Year(), nextMonday.Month(), nextMonday.Day(), 0, 0, 0, 0, t.Location())
 }
+
+// FmtTimeMilli 时间戳格式化：int64（毫秒） → "YYYY-MM-DD HH:mm:ss"
+func FmtTimeMilli(ts int64) string {
+	t := time.UnixMilli(ts)
+	return t.Format("2006-01-02 15:04:05")
+}
+
+func FmtTime(ts int64) string {
+	t := time.Unix(ts, 0)
+	return t.Format("2006-01-02 15:04:05")
+}
