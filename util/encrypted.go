@@ -34,35 +34,33 @@ func GetHmacSha256Base64(str, key string) string {
 	return base64.StdEncoding.EncodeToString(bytes)
 }
 
-// 加密数据
+// AESEncrypt 使用 AES-CBC 模式加密数据
 func AESEncrypt(plaintext, k string) (string, error) {
 	data := []byte(plaintext)
 	key := []byte(k)
 	aesBlockEncrypter, err := aes.NewCipher(key)
-	content := PKCS5Padding(data, aesBlockEncrypter.BlockSize())
-	encrypted := make([]byte, len(content))
 	if err != nil {
-		println(err.Error())
 		return "", err
 	}
+	content := PKCS5Padding(data, aesBlockEncrypter.BlockSize())
+	encrypted := make([]byte, len(content))
 	aesEncrypter := cipher.NewCBCEncrypter(aesBlockEncrypter, iv)
 	aesEncrypter.CryptBlocks(encrypted, content)
 	return base64.StdEncoding.EncodeToString(encrypted), nil
 }
 
-// 解密数据
-func AESDecrypt(chiper, k string) (string, error) {
-	src, err := base64.StdEncoding.DecodeString(chiper)
+// AESDecrypt 使用 AES-CBC 模式解密数据
+func AESDecrypt(cipherText, k string) (string, error) {
+	src, err := base64.StdEncoding.DecodeString(cipherText)
 	if err != nil {
 		return "", err
 	}
 	key := []byte(k)
-	decrypted := make([]byte, len(src))
 	aesBlockDecrypter, err := aes.NewCipher(key)
 	if err != nil {
-		println(err.Error())
 		return "", err
 	}
+	decrypted := make([]byte, len(src))
 	aesDecrypter := cipher.NewCBCDecrypter(aesBlockDecrypter, iv)
 	aesDecrypter.CryptBlocks(decrypted, src)
 	trimming := PKCS5Trimming(decrypted)

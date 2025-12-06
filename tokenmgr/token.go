@@ -24,12 +24,12 @@ type TokenInfo struct {
 func CreateToken(aes string, info TokenInfo) (string, error) {
 	data, err := json.Marshal(info)
 	if err != nil {
-		log.Info("create token err", err)
+		log.Errorf("create token marshal err: %v", err)
 		return "", err
 	}
 	encrypted, err := util.AESEncrypt(string(data), aes)
 	if err != nil {
-		log.Info("create token err", err)
+		log.Errorf("create token encrypt err: %v", err)
 		return "", err
 	}
 
@@ -38,23 +38,23 @@ func CreateToken(aes string, info TokenInfo) (string, error) {
 }
 
 func DecryptToken(aes, token string) (TokenInfo, error) {
-	// ✅ Cookie 里的 token 是 URL-safe base64，需要先解码
+	// Cookie 里的 token 是 URL-safe base64，需要先解码
 	raw, err := base64.URLEncoding.DecodeString(token)
 	if err != nil {
-		log.Info("base64 decode token err", err)
+		log.Warnf("base64 decode token err: %v", err)
 		return TokenInfo{}, err
 	}
 
-	bytes, err := util.AESDecrypt(string(raw), aes)
+	decrypted, err := util.AESDecrypt(string(raw), aes)
 	if err != nil {
-		log.Info("decrypt token err", err)
+		log.Warnf("decrypt token err: %v", err)
 		return TokenInfo{}, err
 	}
 
 	var info TokenInfo
-	err = json.Unmarshal([]byte(bytes), &info)
+	err = json.Unmarshal([]byte(decrypted), &info)
 	if err != nil {
-		log.Info("unmarshal token err", err)
+		log.Warnf("unmarshal token err: %v", err)
 		return TokenInfo{}, err
 	}
 	return info, nil

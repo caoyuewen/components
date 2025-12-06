@@ -2,20 +2,21 @@ package dbmysql
 
 import (
 	"fmt"
+	"sync/atomic"
+	"time"
+
 	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"time"
 )
 
-// dbc 数据库链接单例
+// dbc 数据库连接单例（使用 atomic.Pointer 实现无锁并发安全）
 var (
-	dbc  *gorm.DB
-	info MysqlInfo
+	dbc   atomic.Pointer[gorm.DB]
+	info  MysqlInfo
+	check time.Duration
 )
-
-var check time.Duration
 
 type MysqlInfo struct {
 	Address  string
@@ -25,7 +26,7 @@ type MysqlInfo struct {
 	Logger   logger.Interface
 }
 
-// StartUp 在中间件中初始化mysql链接
+// StartUp 在中间件中初始化 MySQL 连接
 func StartUp(msqlInfo MysqlInfo, checkInterval time.Duration) {
 	check = checkInterval
 	info = msqlInfo
@@ -42,14 +43,13 @@ func connDB() {
 		info.DBName,
 	)
 
-	// 使用新版的gorm连接MySQL
+	// 使用新版的 gorm 连接 MySQL
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{Logger: info.Logger})
-	//db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Errorf("[MYSQL] Mysql Database connection failed: %v", err)
+		log.Errorf("[MYSQL] MySQL database connection failed: %v", err)
 		return
 	}
-	log.Infof("[MYSQL] Mysql connected successfully: %s", info.Address)
+	log.Infof("[MYSQL] MySQL connected successfully: %s", info.Address)
 
 	// 获取通用数据库对象 sql.DB 以便设置连接池等
 	sqlDB, err := db.DB()
@@ -62,7 +62,9 @@ func connDB() {
 	sqlDB.SetMaxIdleConns(20)                  // 空闲连接数
 	sqlDB.SetMaxOpenConns(100)                 // 最大打开连接数
 	sqlDB.SetConnMaxLifetime(30 * time.Second) // 连接的最大生命周期
-	dbc = db
+
+	// 原子存储，无锁
+	dbc.Store(db)
 }
 
 // 定期检查数据库连接
@@ -81,14 +83,18 @@ func checkConnection() {
 
 // 检测数据库连接是否断开
 func checkDBConnection() bool {
-	sqlDB, err := dbc.DB()
+	db := dbc.Load()
+	if db == nil {
+		return false
+	}
+	sqlDB, err := db.DB()
 	if err != nil {
 		log.Errorf("[MYSQL] Failed to get generic database object: %v", err)
 		return false
 	}
 	err = sqlDB.Ping()
 	if err != nil {
-		log.Errorf("[MYSQL] Mysql Database connection lost: %v", err)
+		log.Errorf("[MYSQL] MySQL database connection lost: %v", err)
 		return false
 	}
 	return true
@@ -98,12 +104,12 @@ func checkDBConnection() bool {
 func reconnectDB() {
 	log.Info("[MYSQL] Attempting to reconnect to the MySQL database...")
 	connDB()
-	if dbc != nil {
+	if dbc.Load() != nil {
 		log.Info("[MYSQL] Successfully reconnected to the MySQL database")
 	}
 }
 
-// 获取数据库客户端实例
+// Client 获取数据库客户端实例（原子读取，无锁）
 func Client() *gorm.DB {
-	return dbc
+	return dbc.Load()
 }

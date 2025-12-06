@@ -2,12 +2,13 @@ package util
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 func Post(uri string, params map[string]string) ([]byte, error) {
@@ -57,36 +58,41 @@ func PostMultipartFormData(uri string, params map[string]string) ([]byte, error)
 }
 
 func Get(url string) ([]byte, error) {
-	client := &http.Client{}
+	return GetWithTimeout(url, 30*time.Second)
+}
 
-	//提交请求
-	request, err := http.NewRequest("GET", url, nil)
-	//异常捕捉
-	if err != nil {
-		panic(err)
-	}
+func GetWithTimeout(url string, timeout time.Duration) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
 
-	//处理返回结果
-	response, err := client.Do(request)
+	request, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
-	//关闭流
-	defer response.Body.Close()
-	//检出结果集
-	resp, err := io.ReadAll(response.Body)
 
-	return resp, err
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	return io.ReadAll(response.Body)
 }
 
 func PostTpl[T any](url string, req any) (*T, error) {
+	return PostTplWithTimeout[T](url, req, 30*time.Second)
+}
+
+func PostTplWithTimeout[T any](url string, req any, timeout time.Duration) (*T, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
 
 	data, err := json.Marshal(req)
 	if err != nil {
 		return nil, err
 	}
 
-	reqInst, err := http.NewRequest("POST", url, bytes.NewBuffer(data))
+	reqInst, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(data))
 	if err != nil {
 		return nil, err
 	}
@@ -96,9 +102,9 @@ func PostTpl[T any](url string, req any) (*T, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	defer respInst.Body.Close()
-	body, err := ioutil.ReadAll(respInst.Body)
+
+	body, err := io.ReadAll(respInst.Body)
 	if err != nil {
 		return nil, err
 	}
