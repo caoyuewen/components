@@ -56,7 +56,6 @@ func InitLogger(info Info) {
 
 // rotateLogDaily handles daily log file rotation
 func rotateLogDaily(currentFile *os.File, logPath string) {
-	logFile := currentFile
 	for {
 		now := time.Now()
 		nextDay := now.AddDate(0, 0, 1)
@@ -64,18 +63,13 @@ func rotateLogDaily(currentFile *os.File, logPath string) {
 
 		time.Sleep(time.Until(nextDay))
 
+		currentFile.Close()
 		logFilePath := filepath.Join(logPath, time.Now().Format("2006-01-02")+".log")
 		newFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 		if err != nil {
 			logrus.Errorf("Failed to create new log file for the next day: %v", err)
 			continue
 		}
-
 		logrus.SetOutput(newFile)
-		// 关闭旧文件（在设置新输出后关闭，避免日志丢失）
-		if logFile != nil {
-			logFile.Close()
-		}
-		logFile = newFile
 	}
 }

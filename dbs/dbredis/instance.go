@@ -29,8 +29,9 @@ func StartUp(addrs []string, checkInterval time.Duration) {
 			ctx := context.Background()
 			_, err := clusterClient.Ping(ctx).Result()
 			if err != nil {
-				log.Errorf("[REDIS] Failed to connect redis cluster: %v err: %s", addrs, err.Error())
+				log.Errorf("[REDIS] Failed to connected redis cluster:%v err:%s ", addrs, err.Error())
 				panic(err.Error())
+				return
 			}
 
 			log.Info("[REDIS] Redis cluster connected successfully")
