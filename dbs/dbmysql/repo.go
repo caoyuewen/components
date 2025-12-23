@@ -279,9 +279,36 @@ func (r *BaseRepository[T]) FindOne(conds ...interface{}) (T, error) {
 func (r *BaseRepository[T]) FindOneWithDB(db *gorm.DB, conds ...interface{}) (T, error) {
 	var t T
 	query := db.Model((*T)(nil))
-	for _, cond := range conds {
-		query = query.Where(cond)
+	
+	// 处理条件参数
+	if len(conds) > 0 {
+		// 如果第一个参数是字符串且包含 ?，则作为单个 Where 条件处理
+		if str, ok := conds[0].(string); ok && len(conds) > 1 {
+			// 检查是否包含占位符
+			hasPlaceholder := false
+			for _, char := range str {
+				if char == '?' {
+					hasPlaceholder = true
+					break
+				}
+			}
+			if hasPlaceholder {
+				// 将第一个参数作为条件，其余作为值
+				query = query.Where(str, conds[1:]...)
+			} else {
+				// 没有占位符，按原来的方式处理
+				for _, cond := range conds {
+					query = query.Where(cond)
+				}
+			}
+		} else {
+			// 其他情况，按原来的方式处理
+			for _, cond := range conds {
+				query = query.Where(cond)
+			}
+		}
 	}
+	
 	if err := query.First(&t).Error; err != nil {
 		if err != gorm.ErrRecordNotFound {
 			log.Errorf("FindOne err: %s", err.Error())
