@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/caoyuewen/components/dbs/dbredis"
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 	log "github.com/sirupsen/logrus"
 )
 

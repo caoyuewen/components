@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"github.com/caoyuewen/components/dbs/dbredis"
 	"github.com/caoyuewen/components/util"
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 	log "github.com/sirupsen/logrus"
 	"math"
 	"time"

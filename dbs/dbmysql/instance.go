@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -14,19 +15,19 @@ import (
 
 // 数据库连接单例
 var (
-	dbc   *gorm.DB
-	info  MysqlInfo
-	check time.Duration
-	once  sync.Once
-	mu    sync.RWMutex
+	dbc         atomic.Pointer[gorm.DB]
+	info        MysqlInfo
+	check       time.Duration
+	once        sync.Once
+	initialized atomic.Bool
 )
 
 // MysqlInfo MySQL 配置信息
 type MysqlInfo struct {
-	Address  string          // 数据库地址 host:port
-	User     string          // 用户名
-	Password string          // 密码
-	DBName   string          // 数据库名
+	Address  string           // 数据库地址 host:port
+	User     string           // 用户名
+	Password string           // 密码
+	DBName   string           // 数据库名
 	Logger   logger.Interface // 日志接口
 
 	// 连接池配置（可选）
@@ -74,15 +75,15 @@ func connDB() {
 
 	config := &gorm.Config{
 		Logger:                                   info.Logger,
-		SkipDefaultTransaction:                   true,  // 跳过默认事务，提升性能
-		PrepareStmt:                              true,  // 缓存预编译语句
-		DisableForeignKeyConstraintWhenMigrating: true,  // 迁移时禁用外键约束
+		SkipDefaultTransaction:                   true, // 跳过默认事务，提升性能
+		PrepareStmt:                              true, // 缓存预编译语句
+		DisableForeignKeyConstraintWhenMigrating: true, // 迁移时禁用外键约束
 	}
 
 	db, err := gorm.Open(mysql.Open(dsn), config)
 	if err != nil {
 		log.Errorf("[MYSQL] Database connection failed: %v", err)
-		return
+		panic(err.Error())
 	}
 	log.Infof("[MYSQL] Connected successfully: %s/%s", info.Address, info.DBName)
 
@@ -90,7 +91,7 @@ func connDB() {
 	sqlDB, err := db.DB()
 	if err != nil {
 		log.Errorf("[MYSQL] Failed to get sql.DB: %v", err)
-		return
+		panic(err.Error())
 	}
 
 	// 设置连接池参数
@@ -99,9 +100,8 @@ func connDB() {
 	sqlDB.SetConnMaxLifetime(info.ConnMaxLifetime)
 	sqlDB.SetConnMaxIdleTime(info.ConnMaxIdleTime)
 
-	mu.Lock()
-	dbc = db
-	mu.Unlock()
+	dbc.Store(db)
+	initialized.Store(true)
 }
 
 // checkConnection 定期检查数据库连接
@@ -117,10 +117,7 @@ func checkConnection() {
 
 // isConnected 检测数据库连接是否正常
 func isConnected() bool {
-	mu.RLock()
-	db := dbc
-	mu.RUnlock()
-
+	db := dbc.Load()
 	if db == nil {
 		return false
 	}
@@ -144,32 +141,58 @@ func isConnected() bool {
 // reconnectDB 重连数据库
 func reconnectDB() {
 	log.Info("[MYSQL] Attempting to reconnect...")
-	connDB()
+	
+	// 重新连接
+	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local&timeout=10s&readTimeout=30s&writeTimeout=60s",
+		info.User,
+		info.Password,
+		info.Address,
+		info.DBName,
+	)
 
-	mu.RLock()
-	connected := dbc != nil
-	mu.RUnlock()
-
-	if connected {
-		log.Info("[MYSQL] Reconnected successfully")
+	config := &gorm.Config{
+		Logger:                                   info.Logger,
+		SkipDefaultTransaction:                   true,
+		PrepareStmt:                              true,
+		DisableForeignKeyConstraintWhenMigrating: true,
 	}
+
+	db, err := gorm.Open(mysql.Open(dsn), config)
+	if err != nil {
+		log.Errorf("[MYSQL] Reconnect failed: %v", err)
+		return
+	}
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Errorf("[MYSQL] Failed to get sql.DB: %v", err)
+		return
+	}
+
+	sqlDB.SetMaxIdleConns(info.MaxIdleConns)
+	sqlDB.SetMaxOpenConns(info.MaxOpenConns)
+	sqlDB.SetConnMaxLifetime(info.ConnMaxLifetime)
+	sqlDB.SetConnMaxIdleTime(info.ConnMaxIdleTime)
+
+	dbc.Store(db)
+	log.Info("[MYSQL] Reconnected successfully")
 }
 
 // Client 获取数据库客户端实例
 func Client() *gorm.DB {
-	mu.RLock()
-	defer mu.RUnlock()
-	return dbc
+	if !initialized.Load() {
+		panic("[MYSQL] Client not initialized, call StartUp first")
+	}
+	return dbc.Load()
 }
 
 // ClientWithContext 获取带上下文的数据库客户端
 func ClientWithContext(ctx context.Context) *gorm.DB {
-	mu.RLock()
-	defer mu.RUnlock()
-	if dbc == nil {
+	db := dbc.Load()
+	if db == nil {
 		return nil
 	}
-	return dbc.WithContext(ctx)
+	return db.WithContext(ctx)
 }
 
 // IsConnected 检查连接是否正常
@@ -177,16 +200,19 @@ func IsConnected() bool {
 	return isConnected()
 }
 
+// IsInitialized 返回是否已初始化
+func IsInitialized() bool {
+	return initialized.Load()
+}
+
 // Close 关闭数据库连接
 func Close() error {
-	mu.Lock()
-	defer mu.Unlock()
-
-	if dbc == nil {
+	db := dbc.Load()
+	if db == nil {
 		return nil
 	}
 
-	sqlDB, err := dbc.DB()
+	sqlDB, err := db.DB()
 	if err != nil {
 		return err
 	}
@@ -195,10 +221,7 @@ func Close() error {
 
 // Stats 获取连接池统计信息
 func Stats() map[string]interface{} {
-	mu.RLock()
-	db := dbc
-	mu.RUnlock()
-
+	db := dbc.Load()
 	if db == nil {
 		return nil
 	}
