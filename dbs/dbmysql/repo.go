@@ -458,7 +458,7 @@ func (r *BaseRepository[T]) FindPageResult(page, pageSize int, order string, con
 		List:       list,
 		Total:      total,
 		Page:       page,
-		PageSize:   len(list),
+		PageSize:   pageSize,
 		TotalPages: totalPages,
 	}, nil
 }
