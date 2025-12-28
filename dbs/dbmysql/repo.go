@@ -279,7 +279,7 @@ func (r *BaseRepository[T]) FindOne(conds ...interface{}) (T, error) {
 func (r *BaseRepository[T]) FindOneWithDB(db *gorm.DB, conds ...interface{}) (T, error) {
 	var t T
 	query := db.Model((*T)(nil))
-	
+
 	// 处理条件参数
 	if len(conds) > 0 {
 		// 如果第一个参数是字符串且包含 ?，则作为单个 Where 条件处理
@@ -308,7 +308,7 @@ func (r *BaseRepository[T]) FindOneWithDB(db *gorm.DB, conds ...interface{}) (T,
 			}
 		}
 	}
-	
+
 	if err := query.First(&t).Error; err != nil {
 		if err != gorm.ErrRecordNotFound {
 			log.Errorf("FindOne err: %s", err.Error())
@@ -458,7 +458,7 @@ func (r *BaseRepository[T]) FindPageResult(page, pageSize int, order string, con
 		List:       list,
 		Total:      total,
 		Page:       page,
-		PageSize:   pageSize,
+		PageSize:   len(list),
 		TotalPages: totalPages,
 	}, nil
 }

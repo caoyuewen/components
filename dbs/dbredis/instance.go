@@ -18,7 +18,6 @@ var (
 	initialized   atomic.Bool
 )
 
-
 // StartUp initializes the global Redis client or cluster client with the provided options and starts the connection checker
 func StartUp(addrs []string, checkInterval time.Duration) {
 	once.Do(func() {
