@@ -2,6 +2,7 @@ package dbmysql
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/caoyuewen/components/util"
@@ -244,7 +245,7 @@ func (r *BaseRepository[T]) FindByIDWithDB(db *gorm.DB, id any) (T, error) {
 		return t, err
 	}
 	if err := db.First(&t, fmt.Sprintf("%s = ?", r.pkColumn), idI64).Error; err != nil {
-		if err != gorm.ErrRecordNotFound {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			log.Errorf("FindByID err: %s", err.Error())
 		}
 		return t, err
@@ -310,7 +311,7 @@ func (r *BaseRepository[T]) FindOneWithDB(db *gorm.DB, conds ...interface{}) (T,
 	}
 
 	if err := query.First(&t).Error; err != nil {
-		if err != gorm.ErrRecordNotFound {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			log.Errorf("FindOne err: %s", err.Error())
 		}
 		return t, err
