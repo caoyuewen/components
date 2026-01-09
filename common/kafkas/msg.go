@@ -1,8 +1,7 @@
-package kafkacenter
+package kafkas
 
 import (
 	"encoding/json"
-	"github.com/caoyuewen/components/common/sharecache"
 )
 
 type MsgKey struct {
@@ -23,9 +22,4 @@ func UnmarshalMsgKey(key []byte) (MsgKey, error) {
 	var res MsgKey
 	err := json.Unmarshal(key, &res)
 	return res, err
-}
-
-func GetTopicByRoomId(roomId string) (string, error) {
-	topic, err := sharecache.RoomTopicCacheMgr.GetTopicByRoomId(roomId)
-	return topic, err
 }
