@@ -26,8 +26,8 @@ const (
 
 type QuickNodeFactory struct{}
 
-var prodCfg = `{"api_key":"QN_d0b77e2d5daf4ada8030bf658b602f72","notify_email":"liufengzhx@gmail.com","callback":"https://effic.in/payment/callback/quicknode","jump_url":"https://effic.in","Domain":"https://snowy-divine-bridge.tron-mainnet.quiknode.pro/38651257af9f5ef32ca03dce1a09994b1003d1fb/jsonrpc"}`
-var devCfg = `{"api_key":"QN_d0b77e2d5daf4ada8030bf658b602f72","notify_email":"liufengzhx@gmail.com","callback":"https://effic.in/payment/callback/quicknode","jump_url":"https://effic.in","Domain":"https://snowy-divine-bridge.tron-mainnet.quiknode.pro/38651257af9f5ef32ca03dce1a09994b1003d1fb/jsonrpc"}`
+var quickNodeProCfg = `{"api_key":"QN_f9381f90ca184d379e38cb0e035c22c0","notify_email":"efficinbussness@gmail.com","callback":"https://effic.in/payment/callback/quicknode","jump_url":"https://effic.in","Domain":"https://snowy-divine-bridge.tron-mainnet.quiknode.pro/38651257af9f5ef32ca03dce1a09994b1003d1fb/jsonrpc"}`
+var quickNodeDevCfg = `{"api_key":"QN_d0b77e2d5daf4ada8030bf658b602f72","notify_email":"liufengzhx@gmail.com","callback":"https://test.in/payment/callback/quicknode","jump_url":"https://effic.in","Domain":"https://ultra-weathered-emerald.tron-mainnet.quiknode.pro/c2b609f1f3eea7b28acc3754494da06a8c8a10ee/jsonrpc"}`
 
 type QuickNode struct {
 	ApiKey      string `json:"api_key"`
@@ -40,16 +40,26 @@ type QuickNode struct {
 var quickNodeService *QuickNode
 
 func InitQuickNode(env string) {
-	config := devCfg
+
+	config := quickNodeDevCfg
 	if quickNodeService == nil {
 		if env == "prod" {
-			config = prodCfg
+			config = quickNodeProCfg
 		}
 	}
 	err := json.Unmarshal([]byte(config), &quickNodeService)
 	if err != nil {
 		panic(err)
 	}
+
+	payment := Payment{
+		Name:        "quicknode",
+		PayService:  quickNodeService,
+		PaymentType: PayTypeUsdt,
+	}
+
+	paymentRegister(payment)
+
 }
 
 func QuickNodeService() *QuickNode {

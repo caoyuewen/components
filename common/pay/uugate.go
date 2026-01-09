@@ -53,11 +53,19 @@ func InitUugate(env string) {
 	if err != nil {
 		panic(err)
 	}
+
+	payment := Payment{
+		Name:        "uugate",
+		PayService:  uugateService,
+		PaymentType: PayTypeUsdt,
+	}
+
+	paymentRegister(payment)
 }
 
-func UugateService() *QuickNode {
+func UugateService() *Uugate {
 
-	return quickNodeService
+	return uugateService
 }
 
 type Uugate struct {

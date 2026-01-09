@@ -50,9 +50,11 @@ type Payment struct {
 }
 
 // PaymentMap 支付渠道映射 key = 三方渠道名 ; v = 对应第三方渠道
-var PaymentMap = map[string]Payment{
-	"uugate":    {Name: "uugate", PayService: uugateService, PaymentType: PayTypeUsdt},
-	"quicknode": {Name: "quicknode", PayService: quickNodeService, PaymentType: PayTypeUsdt},
+// 只允许启动时加载 运行时只读
+var PaymentMap = map[string]Payment{}
+
+func paymentRegister(payment Payment) {
+	PaymentMap[payment.Name] = payment
 }
 
 type PaymentServerCondition struct {

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/go-pay/gopay"
+	"github.com/go-pay/gopay/wechat/v3"
 	log "github.com/sirupsen/logrus"
 )
 
